@@ -42,18 +42,28 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+
+import net.runelite.api.Client;
+import net.runelite.api.InventoryID;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.ui.overlay.components.ImageComponent;
 import net.runelite.client.util.ImageUtil;
 
 @Singleton
 class KourendLibraryPanel extends PluginPanel
 {
+	private static final int INVENTORY_SIZE = 28;
 	private static final ImageIcon RESET_ICON;
 	private static final ImageIcon RESET_HOVER_ICON;
 
 	private final KourendLibraryConfig config;
 	private final Library library;
+	private final Client client;
+	private final ItemManager itemManager;
 
 	private final HashMap<Book, BookPanel> bookPanels = new HashMap<>();
 
@@ -65,12 +75,14 @@ class KourendLibraryPanel extends PluginPanel
 	}
 
 	@Inject
-	KourendLibraryPanel(KourendLibraryConfig config, Library library)
+	KourendLibraryPanel(KourendLibraryConfig config, Library library, Client client, ItemManager itemManager)
 	{
 		super();
 
 		this.config = config;
 		this.library = library;
+		this.itemManager = itemManager;
+		this.client = client;
 	}
 
 	void init()
@@ -150,6 +162,29 @@ class KourendLibraryPanel extends PluginPanel
 				else
 				{
 					e.getValue().setLocation("<html>" + locs.stream().collect(Collectors.joining("<br>")) + "</html>");
+				}
+			}
+
+			final ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
+
+			if (itemContainer != null)
+			{
+
+				final Item[] items = itemContainer.getItems();
+
+				for (int i = 0; i < INVENTORY_SIZE; i++)
+				{
+					if (i < items.length)
+					{
+						final Item item = items[i];
+
+						Book potentialBook = Book.byId(item.getId());
+
+						for (Map.Entry<Book, BookPanel> b : bookPanels.entrySet())
+						{
+							b.getValue().setIsHeld(potentialBook == b.getKey());
+						}
+					}
 				}
 			}
 		});
