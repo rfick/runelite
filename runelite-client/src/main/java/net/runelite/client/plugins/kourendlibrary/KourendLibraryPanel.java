@@ -47,6 +47,7 @@ import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
@@ -132,6 +133,51 @@ class KourendLibraryPanel extends PluginPanel
 				b.getValue().setIsTarget(customerBook == b.getKey());
 			}
 
+			SolvedState state = library.getState();
+			// If state is solved, display hint pointing to correct book
+			if(state == SolvedState.COMPLETE && customerBook != null)
+			{
+				for (Bookcase bookcase : library.getBookcases())
+				{
+					//Bookcase contains a book
+					if(bookcase.getPossibleBooks().size() == 1)
+					{
+						Book book = bookcase.getPossibleBooks().iterator().next();
+						if(book.getItem() == customerBook.getItem())
+						{
+							WorldPoint correctLocation = bookcase.getLocation();
+							client.setHintArrow(correctLocation);
+						}
+					}
+				}
+			}
+
+			final ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
+
+			if (itemContainer != null)
+			{
+
+				final Item[] items = itemContainer.getItems();
+
+				for (int i = 0; i < INVENTORY_SIZE; i++)
+				{
+					if (i < items.length)
+					{
+						final Item item = items[i];
+
+						Book potentialBook = Book.byId(item.getId());
+
+						// If player is already holding the correct book, no need to show hint
+						if(potentialBook != null && customerBook != null)
+						{
+							if (potentialBook.getItem() == customerBook.getItem()) {
+								client.clearHintArrow();
+							}
+						}
+					}
+				}
+			}
+
 			HashMap<Book, HashSet<String>> bookLocations = new HashMap<>();
 
 			for (Bookcase bookcase : library.getBookcases())
@@ -164,8 +210,6 @@ class KourendLibraryPanel extends PluginPanel
 					e.getValue().setLocation("<html>" + locs.stream().collect(Collectors.joining("<br>")) + "</html>");
 				}
 			}
-
-			final ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
 
 			if (itemContainer != null)
 			{
